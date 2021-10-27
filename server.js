@@ -85,6 +85,44 @@ const db = mysql.createConnection(
   console.log(`Connected to the employee_db database.`)
 );
 
+// Read all departments
+app.get('/api/departments', (req, res) => {
+  const sql = `SELECT * FROM department 
+  order by name asc;`;
+  
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+       return;
+    }
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  });
+});
+
+// Read all ROLES
+app.get('/api/roles', (req, res) => {
+  const sql = `select a.id, a.title, b.name as department, salary from role a
+  left join department b 
+  on a.department_id = b.id
+  order by id, salary;`;
+  
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+       return;
+    }
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  });
+});
+
+
+
 app.put('api/:title/:salary/:department', function (req, res) {
   const title = req.body.title;
   const salary = req.params.salary;
@@ -101,8 +139,9 @@ app.put('api/:title/:salary/:department', function (req, res) {
 
 
 // Query database
-db.query('SELECT database();', function (err, results) {
+db.query('SELECT * FROM department order by name asc;', function (err, results) {
   console.log(results);
+  console.log('^^ query')
 });
 
 // Default response for any other request (Not Found)

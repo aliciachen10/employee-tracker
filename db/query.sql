@@ -12,11 +12,7 @@ left join role b
 on a.role_id = b.id
 left join department c 
 on b.department_id = c.id
-left join (
--- left join employee d
--- on a.manager_id = d.id;
-
-select a.id, a.first_name, a.last_name, concat(b.first_name, " ", b.last_name) as manager from employee a 
+left join (select a.id, a.first_name, a.last_name, concat(b.first_name, " ", b.last_name) as manager from employee a 
 left join employee b 
 on a.manager_id = b.id) d
 on a.id = d.id;
