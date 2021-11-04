@@ -6,7 +6,6 @@ left join department b
 on a.department_id = b.id
 order by id, salary;
 
---is there a more efficient way to write this query? 
 select a.id, a.first_name, a.last_name, b.title, c.name as department, b.salary, d.manager from employee a
 left join role b
 on a.role_id = b.id

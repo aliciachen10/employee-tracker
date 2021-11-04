@@ -79,16 +79,15 @@ const db = mysql.createConnection(
     // MySQL username,
     user: 'root',
     // MySQL password
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    password: 'Syzygy666!',
+    database: 'employee_db'
   },
   console.log(`Connected to the employee_db database.`)
 );
 
-// Read all departments
+// Read all DEPARTMENTS
 app.get('/api/departments', (req, res) => {
-  const sql = `SELECT * FROM department 
-  order by name asc;`;
+  const sql = `SELECT * FROM department order by name asc;`;
   
   db.query(sql, (err, rows) => {
     if (err) {
@@ -121,7 +120,47 @@ app.get('/api/roles', (req, res) => {
   });
 });
 
+//READ ALL EMPLOYEES
+app.get('/api/employees', (req, res) => {
+  const sql = `select a.id, a.first_name, a.last_name, b.title, c.name as department, b.salary, d.manager from employee a
+  left join role b
+  on a.role_id = b.id
+  left join department c 
+  on b.department_id = c.id
+  left join (select a.id, a.first_name, a.last_name, concat(b.first_name, " ", b.last_name) as manager from employee a 
+  left join employee b 
+  on a.manager_id = b.id) d
+  on a.id = d.id;`;
+  
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+       return;
+    }
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  });
+});
 
+//ADD A DEPARTMENT
+app.post('/api/new-department', (req, res) => {
+  const dept_name = req.body.dept_name;
+  const sql = `INSERT INTO department (name)
+    VALUES (?)`;
+  
+  db.query(sql, dept_name, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: req.body
+    });
+  });
+});
 
 app.put('api/:title/:salary/:department', function (req, res) {
   const title = req.body.title;
@@ -140,7 +179,7 @@ app.put('api/:title/:salary/:department', function (req, res) {
 
 // Query database
 db.query('SELECT * FROM department order by name asc;', function (err, results) {
-  console.log(results);
+  console.table(results);
   console.log('^^ query')
 });
 
