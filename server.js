@@ -9,69 +9,6 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-
-const questions = [
-  {
-    type: 'input',
-    message: 'What is the name of your department?',
-    name: 'newDepartment',
-  },
-  {
-    type: 'input',
-    message: 'What is the name of your role?',
-    name: 'newRole',
-  },
-  {
-    type: 'input',
-    message: 'What is the salary of the role?',
-    name: 'newSalary'
-  },
-  {
-    type: 'input',
-    message: 'What department does the role belong to?',
-    name: 'roleDepartment'
-  },
-  {
-    type: 'input',
-    message: 'What is the employee\'s first name?',
-    name: 'firstName'
-  },
-  {
-    type: 'input',
-    message: 'What is the employee\'s last name?',
-    name: 'lastName'
-  },
-  {
-    type: 'input',
-    message: 'What is the employee\'s role?',
-    name: 'employeeRole'
-  },
-  {
-    type: 'list',
-    message: 'Who is the employee\'s manager?',
-    name: 'manager',
-    choices: ['John Doe', 'Mike Chan', 'Ashley Rodriguez', 'Kevin Tupik', 'Kunal Singh', 'Malia Brown']
-  },
-  {
-    type: 'list',
-    message: 'What would you like to do?',
-    choices: ['View All Employees', 'Add Employee', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department', 'Quit'],
-    name: 'choice'
-  },
-  {
-    type: 'list',
-    message: 'Which employee\'s role do you want to update?',
-    name: 'roleUpdate',
-    choices: ['John Doe', 'Mike Chan', 'Ashley Rodriguez', 'Kevin Tupik', 'Kunal Singh', 'Malia Brown', 'Sarah Lourd', 'Tom Allen']
-  },
-  {
-    type: 'list',
-    message: 'Which role do you want to assign the selected employee?',
-    name: 'newRoleAssign',
-    choices: ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer']
-  }
-];
-
 // Connect to database
 const db = mysql.createConnection(
   {
@@ -85,24 +22,121 @@ const db = mysql.createConnection(
   console.log(`Connected to the employee_db database.`)
 );
 
+const questions = [
+  {
+    type: 'list',
+    message: 'What would you like to do?',
+    choices: ['View All Employees', 'Add Employee', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department', 'Quit'],
+    name: 'choice'
+  },
+  {
+    type: 'input',
+    message: 'What is the name of your department?',
+    name: 'newDepartment',
+    when: (answers) => answers.choice === 'Add Department'
+    // value: id from the database. if they select 'human resources' it returns in the db the actual id
+    //update ____ where id = response.id  
+  },
+  {
+    type: 'input',
+    message: 'What is the name of your role?',
+    name: 'newRole',
+    when: (answers) => answers.choice === 'Add Role'
+  },
+  {
+    type: 'input',
+    message: 'What is the salary of the role?',
+    name: 'newSalary',
+    when: (answers) => answers.choice === 'Add Role'
+  },
+  {
+    type: 'input',
+    message: 'What department does the role belong to?',
+    name: 'roleDepartment',
+    when: (answers) => answers.choice === 'Add Role'
+  },
+  {
+    type: 'input',
+    message: 'What is the employee\'s first name?',
+    name: 'firstName',
+    when: (answers) => answers.choice === 'Add Employee'
+  },
+  {
+    type: 'input',
+    message: 'What is the employee\'s last name?',
+    name: 'lastName',
+    when: (answers) => answers.choice === 'Add Employee'
+  },
+  {
+    type: 'list',
+    message: 'What is the employee\'s role?',
+    name: 'employeeRole',
+    choices: db.query(`select title from role;`, (err, rows) => {console.log(rows.map(a => a.title))}),
+    when: (answers) => answers.choice === 'Add Employee'
+  },
+  {
+    type: 'input',
+    // type: 'list',
+    message: 'Who is the employee\'s manager?',
+    name: 'manager',
+    // choices: ['None', 'John Doe', 'Mike Chan', 'Ashley Rodriguez', 'Kevin Tupik', 'Kunal Singh', 'Malia Brown'],
+    when: (answers) => answers.choice === 'Add Employee'
+  },
+  {
+    type: 'list',
+    message: 'Which employee\'s role do you want to update?',
+    name: 'roleUpdate',
+    choices: ['John Doe', 'Mike Chan', 'Ashley Rodriguez', 'Kevin Tupik', 'Kunal Singh', 'Malia Brown', 'Sarah Lourd', 'Tom Allen'],
+    when: (answers) => answers.choice === 'Update Employee Role'
+  },
+  {
+    type: 'list',
+    message: 'Which role do you want to assign the selected employee?',
+    name: 'newRoleAssign',
+    choices: ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'],
+    when: (answers) => answers.choice === 'Update Employee Role'
+  }
+];
+
 // Read all DEPARTMENTS
-app.get('/api/departments', (req, res) => {
+const getAllDepartments = () => {
   const sql = `SELECT * FROM department order by name asc;`;
   
   db.query(sql, (err, rows) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log("error");
+      // res.status(500).json({ error: err.message });
        return;
     }
-    res.json({
-      message: 'success',
-      data: rows
-    });
+    console.table(rows);
+    // res.json({
+    //   message: 'success',
+    //   data: rows
+    // });
   });
-});
+};
+
+//ADD A DEPARTMENT
+const addDepartment = newDepartment => {
+  // const dept_name = answers.newDepartment;
+  const sql = `INSERT INTO department (name)
+    VALUES (?)`;
+  
+  db.query(sql, newDepartment, (err, result) => {
+    if (err) {
+      console.log("error")
+      // res.status(400).json({ error: err.message });
+      return;
+    }
+    console.table(`successfully added ${newDepartment} into the database`)
+    // res.json({
+    //   message: 'success',
+    //   data: req.body
+    });
+  };
 
 // Read all ROLES
-app.get('/api/roles', (req, res) => {
+const getAllRoles = () => {
   const sql = `select a.id, a.title, b.name as department, salary from role a
   left join department b 
   on a.department_id = b.id
@@ -110,18 +144,20 @@ app.get('/api/roles', (req, res) => {
   
   db.query(sql, (err, rows) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log("error")
+      // res.status(500).json({ error: err.message });
        return;
     }
-    res.json({
-      message: 'success',
-      data: rows
-    });
+    console.table(rows)
+    // res.json({
+    //   message: 'success',
+    //   data: rows
+    // });
   });
-});
+};
 
 //READ ALL EMPLOYEES
-app.get('/api/employees', (req, res) => {
+const getAllEmployees = () => {
   const sql = `select a.id, a.first_name, a.last_name, b.title, c.name as department, b.salary, d.manager from employee a
   left join role b
   on a.role_id = b.id
@@ -134,60 +170,115 @@ app.get('/api/employees', (req, res) => {
   
   db.query(sql, (err, rows) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log("error")
+      // res.status(500).json({ error: err.message });
        return;
     }
-    res.json({
-      message: 'success',
-      data: rows
-    });
+    console.table(rows)
+    // res.json({
+    //   message: 'success',
+    //   data: rows
+    // });
   });
-});
+};
 
-//ADD A DEPARTMENT
-app.post('/api/new-department', (req, res) => {
-  const dept_name = req.body.dept_name;
-  const sql = `INSERT INTO department (name)
-    VALUES (?)`;
+//ADD AN EMPPLOYEE
+const addEmployee = (firstName, lastName, employeeRole, manager) => {
+  // values (1, "John", "Doe", 1, NULL),
+  const sql = `insert into employee (first_name, last_name, role_id, manager_id)
+  VALUES (?, ?, ?, ?)`;
   
-  db.query(sql, dept_name, (err, result) => {
+  db.query(sql, [firstName, lastName, employeeRole, manager], (err, result) => {
+    if (err) {
+      console.log("error")
+      // res.status(400).json({ error: err.message });
+      return;
+    }
+    console.table(`successfully added ${firstName} ${lastName} into the database`)
+    // res.json({
+    //   message: 'success',
+    //   data: req.body
+    });
+  };
+
+// TODO: Create a function to initialize app
+function init() {
+  inquirer
+  .prompt(questions)
+  .then(function (answers) {
+    // potential answers 
+    // 'Add Employee' (NEEDS TOUCHING UP), 'Update Employee Role', 'Add Role', 'Quit'
+    switch (answers.choice) {
+      case "View All Departments": 
+        getAllDepartments();
+        // return init();
+        break;
+      case "View All Employees": 
+        getAllEmployees();
+        // init();
+        break;
+      case "View All Roles": 
+        getAllRoles(answers.roleUpdate, answers.newRoleAssign);
+        // init();
+        break;
+      case "Add Employee":
+        addEmployee(answers.firstName, answers.lastName, answers.employeeRole, answers.manager);
+        break;
+      case "Update Employee Role":
+        updateEmployeeRole();
+      case "Add Department":
+        addDepartment(answers.newDepartment);
+        break;
+      // case "Quit":
+      //   return init();
+      //   // break;
+      //   // if (answer.moreQuery) return init();
+    }
+  }
+  );
+}
+
+//ADD A ROLE
+app.put('api/new-role', function (req, res) {
+  const title = req.body.title;
+  const salary = req.body.salary;
+  const department_id = req.body.department_id;
+  const sql = `INSERT INTO insert into role (title, salary, department_id) values (?, ?, ?)`
+  db.query(sql, 
+  [title, salary, department_id], (err, result) => {
     if (err) {
       res.status(400).json({ error: err.message });
       return;
     }
-    res.json({
-      message: 'success',
-      data: req.body
-    });
-  });
-});
-
-app.put('api/:title/:salary/:department', function (req, res) {
-  const title = req.body.title;
-  const salary = req.params.salary;
-  const department = req.params.department;
-  db.query(`INSERT INTO insert into role (id, title, salary, department_id) values (1, ?, ?, ?)`, 
-  [title, salary, department_id], (err, result) => {
-    if (err) throw error;
+    console.table(result)
     res.json({
       message: 'success'
     })
-    console.log(result);
   });
 })
 
 
 // Query database
-db.query('SELECT * FROM department order by name asc;', function (err, results) {
-  console.table(results);
-  console.log('^^ query')
-});
+// db.query('SELECT * FROM department order by name asc;', function (err, results) {
+//   console.table(results);
+//   console.log('^^ query')
+// });
 
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
 });
 
+
+// Function call to initialize app
+init();
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+//to do:
+//make quit work
+//call itself so that someone can select a menu option after they've already performed one action
+//make sure the menu option is above the rest 
