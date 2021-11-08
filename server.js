@@ -23,9 +23,9 @@ const db = mysql.createConnection(
 );
 
 const getOnlyRoles = () => {
-  db.query(`select title from role;`, (err, rows) => {
-     return rows.map(a => a.title)
-  })
+  db.query(`select id, title from role;`, (err, rows) => {
+    return rows.map(a => { name: a.title; value: a.id })
+ })
 };
 
 db.query(`select title from role;`, (err, rows) => {
@@ -81,9 +81,7 @@ const questions = [
     type: 'list',
     message: 'What is the employee\'s role?',
     name: 'employeeRole',
-    choices:   db.query(`select id, title from role;`, (err, rows) => {
-      return rows.map(a => { name: a.title; value: a.id })
-   }),
+    choices: getOnlyRoles(),
     when: (answers) => answers.choice === 'Add Employee'
   },
   {
