@@ -96,6 +96,26 @@ const getOnlyEmployees = () => {
 
 getOnlyEmployees();
 
+let departmentArray = [];
+// //was just working on this function
+const getOnlyDepartments = () => {
+
+  return db.promise().query("select name from employee_db.department;").then(rows => {
+    // console.log(">>here are rows>>> ", rows[0])
+    // console.log(rows[0])
+    rows[0].map((a) => {
+      // console.log("aaaaaaaaaaahhh", a)
+      // return { name: a.manager_name, value: a.id };
+      // console.log(a.title)
+      departmentArray.push(a.name)
+     
+    });
+    return departmentArray;
+  }).catch(err => console.log("error"));
+};
+
+getOnlyDepartments();
+
 
 const addEmployeeQuestions = [
   {
@@ -161,9 +181,10 @@ const addRoleQuestions = [
     name: "newSalary"
   },
   {
-    type: "input",
+    type: "list",
     message: "What department does the role belong to?",
-    name: "roleDepartment"
+    name: "roleDepartment",
+    choices: departmentArray
   },
 ]
 
@@ -186,7 +207,7 @@ const getAllDepartments = () => {
 };
 
 //ADD A DEPARTMENT
-const addDepartment = (newDepartment) => {
+const addDepartmentToDb = (newDepartment) => {
   // const dept_name = answers.newDepartment;
   const sql = `INSERT INTO department (name)
     VALUES (?)`;
@@ -205,8 +226,8 @@ const addDepartment = (newDepartment) => {
 };
 
 //ADD A ROLE
-// CURRENTLY WORKING ON THIS FUNCTION! 
-const addRole() = (title, salary, departmentId) => {
+//currently working on this function
+const addRoleToDb = (title, salary, departmentId) => {
   // const dept_name = answers.newDepartment;
   const sql = `INSERT INTO role (title, salary, department_id)
     VALUES (?, ?, ?)`;
@@ -327,6 +348,7 @@ const convertToEmployeeId = (roleTitle) => {
 };
 
 //convert manager name to managerId
+//or employeename to employeeId
 let managerId;
 
 const convertToManagerId = (managerName) => {
@@ -342,7 +364,14 @@ const convertToManagerId = (managerName) => {
   }).catch(err => console.log("managerid error"));
 };
 
-// convertToManagerId('John Doe');
+//convert from department name to department id
+const convertToDepartmentId = (departmentId) => {
+
+  return db.promise().query("SELECT id FROM employee_db.department where name = ?;", departmentId).then(rows => {
+    console.log("here's the id", rows[0][0].id);
+    return rows[0][0].id;
+  }).catch(err => console.log("employeerole error"));
+};
 
 //ADD EMPLOYEE
 const addEmployee = () => { 
@@ -371,16 +400,25 @@ const updateEmployeeRole = () => {
 })
 }
 
+//UPDATE EMPLOYEE ROLE
+const addRole = () => { 
+
+  inquirer.prompt(addRoleQuestions).then(function(answers){
+    convertToDepartmentId(answers.roleDepartment).then((departmentId)=>{
+      addRoleToDb(answers.newRole, answers.newSalary, departmentId)
+  })
+})
+}
+
 
 
 // TODO: Create a function to initialize app
 function init() {
   inquirer.prompt(initialQuestion).then(function (answers) {
-    // 'Add Role', 'Quit'
     switch (answers.choice) {
       case "View All Departments": //finished 
-        getAllDepartments();
-        // return init();
+        getAllDepartments();  
+        return init();
         break;
       case "View All Employees": //finished 
         getAllEmployees();
@@ -398,13 +436,13 @@ function init() {
       case "Add Department": //finished
         addDepartment(answers.newDepartment);
         break;
-      case "Add Role": //working on addRole!!! 
+      case "Add Role": // finished
         addRole();
-      // case "Quit":
-      //   return init();
-      //   // break;
-      //   // if (answer.moreQuery) return init();
+      case "Quit":
+        process.exit(0)
     }
+
+    console.log("bye")
   });
 }
 
@@ -426,26 +464,18 @@ app.put("api/new-role", function (req, res) {
   });
 });
 
-// Query database
-// db.query('SELECT * FROM department order by name asc;', function (err, results) {
-//   console.table(results);
-//   console.log('^^ query')
-// });
-
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
 });
-
-// Function call to initialize app
-// init();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
 //to do:
-//make quit work
+//WORK ON ADD DEPARTMENT
+//TEST EVERY SINGLE FUNCTION AND MAKE SURE IT STILL WORKS 
 //call itself so that someone can select a menu option after they've already performed one action
 //make sure the menu option is above the rest
 
@@ -461,5 +491,6 @@ app.listen(PORT, () => {
 //   )
 
 
-
+//function call to initialize the app
 init();
+// convertToDepartmentId("data science");
