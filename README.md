@@ -4,7 +4,7 @@
 
 Developers frequently have to create interfaces that allow non-developers to easily view and interact with information stored in databases. These interfaces are called **content management systems (CMS)**. I built a command-line application from scratch to manage a company's employee database, using Node.js, Inquirer, and MySQL (and console.table). The application includes a company's departments, roles, and employees.
 
-Walkthrough video here: INSERT LINK TO WALKTHROUGH IVDEO 
+Walkthrough video [here](https://watch.screencastify.com/v/P5vSIKPyVbRKTqkDLNxp).
 
 Instructions: 
 1. clone the repo to your normal machine using git clone 
